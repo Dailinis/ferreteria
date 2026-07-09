@@ -1,0 +1,306 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Categoria {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @unique
+  descripcion String?
+  activo      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  productos   Producto[]
+}
+
+model Marca {
+  id            Int       @id @default(autoincrement())
+  nombre        String    @unique
+  paisOrigen    String?
+  contacto      String?
+  activo        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  productos     Producto[]
+}
+
+model Proveedor {
+  id               Int       @id @default(autoincrement())
+  razonSocial      String
+  rucNit           String?   @unique
+  direccion        String?
+  telefono         String?
+  email            String?
+  contactoPrincipal String?
+  creditoDias      Int       @default(0)
+  activo           Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  productos        Producto[]
+  compras          Compra[]
+  lotesFifo        LoteFifo[]
+}
+
+model UnidadMedida {
+  id             Int          @id @default(autoincrement())
+  codigo         String       @unique
+  nombre         String
+  abreviatura    String
+  tipo           String       // 'pieza', 'longitud', 'peso', 'volumen'
+  factorConversion Float      @default(1.0)
+  unidadBaseId   Int?
+  unidadBase     UnidadMedida? @relation("UnidadBase", fields: [unidadBaseId], references: [id])
+  derivadas      UnidadMedida[] @relation("UnidadBase")
+  productos      Producto[]
+}
+
+model Producto {
+  id                  Int       @id @default(autoincrement())
+  codigoInterno       String    @unique
+  codigoBarra         String?   @unique
+  nombre              String
+  descripcion         String?
+  categoriaId         Int
+  marcaId             Int?
+  proveedorPrincipalId Int?
+  unidadMedidaId      Int
+  material            String?
+  medida              String?
+  costoPromedio       Float     @default(0)
+  precioVenta         Float     @default(0)
+  stockActual         Float     @default(0)
+  stockMinimo         Float     @default(0)
+  stockMaximo         Float     @default(0)
+  puntoReorden        Float     @default(0)
+  metodoCosteo        String    @default("PROMEDIO") // 'FIFO', 'PROMEDIO'
+  activo              Boolean   @default(true)
+  imagenUrl           String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  
+  categoria           Categoria @relation(fields: [categoriaId], references: [id])
+  marca               Marca?    @relation(fields: [marcaId], references: [id])
+  proveedorPrincipal  Proveedor? @relation(fields: [proveedorPrincipalId], references: [id])
+  unidadMedida        UnidadMedida @relation(fields: [unidadMedidaId], references: [id])
+  
+  productoUbicaciones ProductoUbicacion[]
+  stockSucursales     StockSucursal[]
+  movimientos         MovimientoInventario[]
+  lotesFifo           LoteFifo[]
+  ventasDetalle       VentaDetalle[]
+  comprasDetalle      CompraDetalle[]
+}
+
+model Ubicacion {
+  id          Int       @id @default(autoincrement())
+  codigo      String    @unique
+  pasillo     String?
+  estante     String?
+  gaveta      String?
+  descripcion String?
+  activo      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  
+  productoUbicaciones ProductoUbicacion[]
+}
+
+model ProductoUbicacion {
+  id          Int       @id @default(autoincrement())
+  productoId  Int
+  ubicacionId Int
+  cantidad    Float     @default(0)
+  esPrincipal Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  producto    Producto  @relation(fields: [productoId], references: [id])
+  ubicacion   Ubicacion @relation(fields: [ubicacionId], references: [id])
+  
+  @@unique([productoId, ubicacionId])
+}
+
+model Sucursal {
+  id          Int       @id @default(autoincrement())
+  nombre      String
+  direccion   String?
+  telefono    String?
+  esBodega    Boolean   @default(false)
+  activo      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  
+  stockSucursales StockSucursal[]
+  compras         Compra[]
+  ventas          Venta[]
+  usuarios         Usuario[]
+  movimientosOrigen  MovimientoInventario[] @relation("SucursalOrigen")
+  movimientosDestino MovimientoInventario[] @relation("SucursalDestino")
+  lotesFifo       LoteFifo[]
+}
+
+model StockSucursal {
+  id          Int       @id @default(autoincrement())
+  productoId  Int
+  sucursalId  Int
+  cantidad    Float     @default(0)
+  stockMinimo Float     @default(0)
+  updatedAt   DateTime  @updatedAt
+  
+  producto    Producto  @relation(fields: [productoId], references: [id])
+  sucursal    Sucursal  @relation(fields: [sucursalId], references: [id])
+  
+  @@unique([productoId, sucursalId])
+}
+
+model TipoMovimiento {
+  id          Int       @id @default(autoincrement())
+  codigo      String    @unique
+  nombre      String
+  afectaStock String    // 'ENTRADA', 'SALIDA', 'TRANSFERENCIA'
+  descripcion String?
+  
+  movimientos MovimientoInventario[]
+}
+
+model MovimientoInventario {
+  id                Int       @id @default(autoincrement())
+  productoId        Int
+  tipoMovimientoId  Int
+  sucursalOrigenId  Int?
+  sucursalDestinoId Int?
+  cantidad          Float
+  costoUnitario     Float
+  costoTotal        Float
+  stockAnterior     Float
+  stockNuevo        Float
+  referencia        String?
+  motivo            String?
+  usuarioId         Int
+  fecha             DateTime  @default(now())
+  
+  producto          Producto       @relation(fields: [productoId], references: [id])
+  tipoMovimiento    TipoMovimiento @relation(fields: [tipoMovimientoId], references: [id])
+  sucursalOrigen    Sucursal?      @relation("SucursalOrigen", fields: [sucursalOrigenId], references: [id])
+  sucursalDestino   Sucursal?      @relation("SucursalDestino", fields: [sucursalDestinoId], references: [id])
+  usuario           Usuario        @relation(fields: [usuarioId], references: [id])
+}
+
+model LoteFifo {
+  id                Int       @id @default(autoincrement())
+  productoId        Int
+  numeroLote        String
+  fechaCompra       DateTime
+  cantidadInicial   Float
+  cantidadRestante  Float
+  costoUnitario     Float
+  proveedorId       Int?
+  sucursalId        Int
+  activo            Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  
+  producto          Producto  @relation(fields: [productoId], references: [id])
+  proveedor         Proveedor? @relation(fields: [proveedorId], references: [id])
+  sucursal          Sucursal  @relation(fields: [sucursalId], references: [id])
+}
+
+model Usuario {
+  id              Int       @id @default(autoincrement())
+  username        String    @unique
+  passwordHash    String
+  nombreCompleto  String
+  email           String?
+  rol             String    // 'ADMIN', 'GERENTE', 'CAJERO', 'ALMACEN'
+  activo          Boolean   @default(true)
+  sucursalId      Int?
+  ultimoAcceso    DateTime?
+  createdAt       DateTime  @default(now())
+  
+  sucursal        Sucursal? @relation(fields: [sucursalId], references: [id])
+  movimientos     MovimientoInventario[]
+  ventas          Venta[]
+  compras         Compra[]
+}
+
+model AlertaStock {
+  id            Int       @id @default(autoincrement())
+  productoId    Int
+  sucursalId    Int
+  tipoAlerta    String    // 'STOCK_MINIMO', 'SIN_STOCK', 'SOBRE_STOCK'
+  mensaje       String
+  leida         Boolean   @default(false)
+  fechaGenerada DateTime  @default(now())
+}
+
+model Compra {
+  id             Int       @id @default(autoincrement())
+  numeroFactura  String    @unique
+  proveedorId    Int
+  sucursalId     Int
+  fechaCompra    DateTime
+  fechaRecepcion DateTime?
+  subtotal       Float
+  impuesto       Float     @default(0)
+  total          Float
+  estado         String    @default("PENDIENTE") // 'PENDIENTE', 'RECIBIDA', 'PARCIAL', 'CANCELADA'
+  observaciones  String?
+  usuarioId      Int
+  createdAt      DateTime  @default(now())
+  
+  proveedor      Proveedor         @relation(fields: [proveedorId], references: [id])
+  sucursal       Sucursal          @relation(fields: [sucursalId], references: [id])
+  usuario        Usuario           @relation(fields: [usuarioId], references: [id])
+  detalles       CompraDetalle[]
+}
+
+model CompraDetalle {
+  id              Int       @id @default(autoincrement())
+  compraId        Int
+  productoId      Int
+  cantidad        Float
+  costoUnitario   Float
+  costoTotal      Float
+  lote            String?
+  fechaVencimiento DateTime?
+  
+  compra          Compra   @relation(fields: [compraId], references: [id])
+  producto        Producto @relation(fields: [productoId], references: [id])
+}
+
+model Venta {
+  id                    Int       @id @default(autoincrement())
+  numeroVenta           String    @unique
+  sucursalId            Int
+  clienteNombre         String?
+  clienteIdentificacion String?
+  fechaVenta            DateTime  @default(now())
+  subtotal              Float
+  impuesto              Float     @default(0)
+  descuento             Float     @default(0)
+  total                 Float
+  metodoPago            String    // 'EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'CREDITO'
+  estado                String    @default("COMPLETADA") // 'COMPLETADA', 'ANULADA', 'PENDIENTE'
+  usuarioId             Int
+  observaciones         String?
+  createdAt             DateTime  @default(now())
+  
+  sucursal              Sucursal      @relation(fields: [sucursalId], references: [id])
+  usuario               Usuario       @relation(fields: [usuarioId], references: [id])
+  detalles              VentaDetalle[]
+}
+
+model VentaDetalle {
+  id              Int       @id @default(autoincrement())
+  ventaId         Int
+  productoId      Int
+  cantidad        Float
+  precioUnitario  Float
+  descuentoUnitario Float   @default(0)
+  subtotal        Float
+  costoUnitario   Float
+  
+  venta           Venta    @relation(fields: [ventaId], references: [id])
+  producto        Producto @relation(fields: [productoId], references: [id])
+}

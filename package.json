@@ -1,0 +1,55 @@
+{
+  "name": "sistema-inventario-ferreteria",
+  "version": "1.0.0",
+  "description": "Sistema de Gestión de Inventario para Ferretería",
+  "main": "electron/main.js",
+  "scripts": {
+    "electron": "electron .",
+    "electron-dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\" \"wait-on http://localhost:3000 && electron .\"",
+    "build": "npm run build:frontend && npm run build:electron",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:electron": "electron-builder",
+    "dist": "npm run build"
+  },
+  "build": {
+    "appId": "com.ferreteria.inventario",
+    "productName": "Sistema Inventario Ferretería",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "backend/**/*",
+      "frontend/dist/**/*",
+      "backend/node_modules/**/*",
+      "backend/prisma/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "backend"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "sign": null,
+      "signingHashAlgorithms": []
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "afterSign": null
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "electron-is-dev": "^2.0.0",
+    "electron-packager": "^17.1.2",
+    "wait-on": "^7.2.0"
+  }
+}
