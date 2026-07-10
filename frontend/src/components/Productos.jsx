@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 
 // Helper para obtener la URL de la API según el entorno
 const getApiUrl = (endpoint) => {
+  // En producción (Vercel), usar la URL del backend en Render
+  // En desarrollo, usar el proxy de Vite
   return import.meta.env.MODE === 'production' 
-    ? `http://localhost:3001${endpoint}`
+    ? `https://ferreteria-g9ay.onrender.com${endpoint}`
     : endpoint
 }
 

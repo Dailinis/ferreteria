@@ -1,6 +1,15 @@
 import { useState } from 'react'
 import backgroundImage from '/images/como-poner-una-ferreteria-guia.jpg'
 
+// Helper para obtener la URL de la API según el entorno
+const getApiUrl = (endpoint) => {
+  // En producción (Vercel), usar la URL del backend en Render
+  // En desarrollo, usar el proxy de Vite
+  return import.meta.env.MODE === 'production' 
+    ? `https://ferreteria-g9ay.onrender.com${endpoint}`
+    : endpoint
+}
+
 export default function Login({ onLogin }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -13,12 +22,7 @@ export default function Login({ onLogin }) {
     setLoading(true)
 
     try {
-      // En producción, usar localhost:3001 directamente
-      const apiUrl = import.meta.env.MODE === 'production' 
-        ? 'http://localhost:3001/api/auth/login'
-        : '/api/auth/login'
-      
-      const response = await fetch(apiUrl, {
+      const response = await fetch(getApiUrl('/api/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),

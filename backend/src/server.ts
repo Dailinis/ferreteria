@@ -12,7 +12,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
 // Registrar plugins
 fastify.register(cors, {
-  origin: true,
+  origin: [
+    'http://localhost:3000',
+    'https://ferreteria-beige-five.vercel.app'
+  ],
+  credentials: true,
 });
 
 fastify.register(jwt, {
