@@ -1,4 +1,23 @@
 import { useState, useEffect } from 'react'
+import Modal from './Modal'
+
+const INITIAL_FORM = {
+  codigoInterno: '',
+  codigoBarra: '',
+  nombre: '',
+  descripcion: '',
+  categoriaId: 1,
+  marcaId: 1,
+  proveedorPrincipalId: 1,
+  unidadMedidaId: 1,
+  material: '',
+  medida: '',
+  costoPromedio: 0,
+  precioVenta: 0,
+  stockActual: 0,
+  stockMinimo: 0,
+  stockMaximo: 0,
+}
 
 // Helper para obtener la URL de la API según el entorno
 const getApiUrl = (endpoint) => {
@@ -14,23 +33,8 @@ export default function Productos() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [formData, setFormData] = useState({
-    codigoInterno: '',
-    codigoBarra: '',
-    nombre: '',
-    descripcion: '',
-    categoriaId: 1,
-    marcaId: 1,
-    proveedorPrincipalId: 1,
-    unidadMedidaId: 1,
-    material: '',
-    medida: '',
-    costoPromedio: 0,
-    precioVenta: 0,
-    stockActual: 0,
-    stockMinimo: 0,
-    stockMaximo: 0,
-  })
+  const [saving, setSaving] = useState(false)
+  const [formData, setFormData] = useState(INITIAL_FORM)
 
   const [categorias, setCategorias] = useState([])
   const [marcas, setMarcas] = useState([])
@@ -71,8 +75,14 @@ export default function Productos() {
     }
   }
 
+  const closeForm = () => {
+    setShowForm(false)
+    setFormData(INITIAL_FORM)
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setSaving(true)
     try {
       const response = await fetch(getApiUrl('/api/productos'), {
         method: 'POST',
@@ -81,28 +91,13 @@ export default function Productos() {
       })
 
       if (response.ok) {
-        setShowForm(false)
+        closeForm()
         fetchProductos()
-        setFormData({
-          codigoInterno: '',
-          codigoBarra: '',
-          nombre: '',
-          descripcion: '',
-          categoriaId: 1,
-          marcaId: 1,
-          proveedorPrincipalId: 1,
-          unidadMedidaId: 1,
-          material: '',
-          medida: '',
-          costoPromedio: 0,
-          precioVenta: 0,
-          stockActual: 0,
-          stockMinimo: 0,
-          stockMaximo: 0,
-        })
       }
     } catch (error) {
       console.error('Error creating producto:', error)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -119,8 +114,8 @@ export default function Productos() {
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2>Productos</h2>
-          <button className="success" onClick={() => setShowForm(!showForm)}>
-            {showForm ? 'Cancelar' : '+ Nuevo Producto'}
+          <button className="primary" onClick={() => setShowForm(true)}>
+            + Nuevo Producto
           </button>
         </div>
 
@@ -132,10 +127,24 @@ export default function Productos() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+      </div>
 
-        {showForm && (
-          <form onSubmit={handleSubmit} style={{ marginTop: '20px', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-            <h3 style={{ marginBottom: '15px' }}>Nuevo Producto</h3>
+      <Modal
+        open={showForm}
+        onClose={closeForm}
+        title="Nuevo producto"
+        subtitle="Completa los datos del artículo. Los campos marcados con * son obligatorios."
+        footer={
+          <>
+            <button type="button" className="ghost" onClick={closeForm}>Cancelar</button>
+            <button type="submit" form="producto-form" className="primary" disabled={saving}>
+              {saving ? 'Guardando...' : 'Guardar producto'}
+            </button>
+          </>
+        }
+      >
+          <form id="producto-form" onSubmit={handleSubmit}>
+            <div className="modal-section">Identificación</div>
             <div className="form-row">
               <div className="form-group">
                 <label>Código Interno *</label>
@@ -168,6 +177,7 @@ export default function Productos() {
                 onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
               />
             </div>
+            <div className="modal-section">Clasificación</div>
             <div className="form-row">
               <div className="form-group">
                 <label>Categoría</label>
@@ -213,6 +223,7 @@ export default function Productos() {
                 />
               </div>
             </div>
+            <div className="modal-section">Precios</div>
             <div className="form-row">
               <div className="form-group">
                 <label>Costo Promedio</label>
@@ -233,6 +244,7 @@ export default function Productos() {
                 />
               </div>
             </div>
+            <div className="modal-section">Inventario</div>
             <div className="form-row">
               <div className="form-group">
                 <label>Stock Actual</label>
@@ -259,10 +271,8 @@ export default function Productos() {
                 />
               </div>
             </div>
-            <button type="submit" className="primary">Guardar Producto</button>
           </form>
-        )}
-      </div>
+      </Modal>
 
       <div className="card">
         <table>

@@ -49,11 +49,13 @@ import { registerProductosRoutes } from './routes/productos';
 import { registerVentasRoutes } from './routes/ventas';
 import { registerAuthRoutes } from './routes/auth';
 import { registerInventarioRoutes } from './routes/inventario';
+import { registerDashboardRoutes } from './routes/dashboard';
 
 registerProductosRoutes(fastify, prisma);
 registerVentasRoutes(fastify, prisma);
 registerAuthRoutes(fastify, prisma);
 registerInventarioRoutes(fastify, prisma);
+registerDashboardRoutes(fastify, prisma);
 
 // Iniciar servidor
 const start = async () => {

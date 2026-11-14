@@ -3,3 +3,9 @@ dist/
 dist-final/
 dist-final-v2/
 dist-new/
+
+# Base de datos local y temporales
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+*.timestamp-*.mjs
+.env
