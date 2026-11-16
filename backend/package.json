@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "render-build": "prisma generate && prisma migrate deploy && tsx prisma/seed.ts && tsc",
+    "postinstall": "prisma generate && node scripts/setup-db.js",
+    "render-build": "npm run build",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",

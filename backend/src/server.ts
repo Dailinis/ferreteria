@@ -3,6 +3,9 @@ import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import { PrismaClient } from '@prisma/client';
 
+// Valores por defecto si el entorno de despliegue no define variables
+process.env.DATABASE_URL ||= 'file:./dev.db';
+
 const prisma = new PrismaClient();
 const fastify = Fastify({ logger: true });
 
